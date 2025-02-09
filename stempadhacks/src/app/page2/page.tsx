@@ -152,12 +152,12 @@ export default function Page2() {
 
       {loading && <p>Loading...</p>}
       
-      {pdfData && (
+      {/* {pdfData && (
         <div>
           <h2>Parsed PDF Data</h2>
           <pre>{pdfData}</pre>
         </div>
-      )}
+      )} */}
 
       {summary && (
         <div>

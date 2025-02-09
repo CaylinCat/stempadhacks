@@ -5,7 +5,7 @@ async function getSummary(text: string, gradeLevel: string): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
 
   // The prompt
-  const prompt = `Summarize the following text in language appropriate for a ${gradeLevel} grade student:\n\n${text}`;
+  const prompt = `Create a full page of notes for the following text in language appropriate for a ${gradeLevel} grade student:\n\n${text}. Make sure to include a vocabulary section at the end for words above the grade level and to use common words when possible.`;
 
   try {
     // Requesting OpenAI's GPT-3.5 Turbo using the chat completion endpoint
@@ -17,7 +17,7 @@ async function getSummary(text: string, gradeLevel: string): Promise<string> {
           { role: 'system', content: 'You are a helpful assistant.' },
           { role: 'user', content: prompt },
         ],
-        max_tokens: 150,
+        max_tokens: 750,
         temperature: 0.7,
       },
       {
