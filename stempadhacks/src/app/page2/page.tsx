@@ -1,24 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import * as pdfjsLib from "pdfjs-dist";
+import { getDocument } from "pdfjs-dist"; // Import the getDocument function directly
+import { GlobalWorkerOptions } from "pdfjs-dist"; // Import GlobalWorkerOptions
 
 export default function Page2() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfText, setPdfText] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
 
   useEffect(() => {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js";
-    
+    // Set the worker source for PDF.js
+    GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
+
     const storedFile = localStorage.getItem("pdfFile");
     if (storedFile) {
       const file = dataURLtoFile(storedFile, "uploaded-file.pdf");
       setPdfFile(file);
-      extractTextFromPDF(file);
+      extractTextFromPDF(file); // Extract text when file is set
     }
   }, []);
 
-  const dataURLtoFile = (dataurl: string, filename: string) => {
+  const dataURLtoFile = (dataurl: string, filename: string): File => {
     const arr = dataurl.split(",");
     if (arr.length !== 2) {
       throw new Error("Invalid data URL");
@@ -41,45 +44,40 @@ export default function Page2() {
     return new File([u8arr], filename, { type: mime });
   };
 
-  const extractTextFromPDF = (file: File) => {
+  const extractTextFromPDF = (file: File): void => {
     const reader = new FileReader();
-    reader.onload = async () => {
-      const arrayBuffer = reader.result as ArrayBuffer;
-      try {
-        const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
-        const numPages = pdfDoc.numPages;
-        const textPromises = [];
+    reader.onload = async (e) => {
+      const typedArray = new Uint8Array(e.target!.result as ArrayBuffer);
+      const pdf = await getDocument(typedArray).promise; // Use getDocument here
 
-        for (let i = 1; i <= numPages; i++) {
-          textPromises.push(
-            pdfDoc.getPage(i).then((page) => {
-              return page.getTextContent().then((textContent) => {
-                return textContent.items.map((item: any) => item.str).join(" ");
-              });
-            })
-          );
-        }
-
-        const textArray = await Promise.all(textPromises);
-        setPdfText(textArray.join("\n"));
-      } catch (error) {
-        console.error("Error extracting text from PDF:", error);
+      let fullText = "";
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const textItems = (textContent.items as any[]).map((item) => item.str); // Cast to any[] if necessary
+        fullText += textItems.join(" ");
       }
+
+      setPdfText(fullText); // Store the extracted text
+      generateNotes(fullText); // Generate notes after extracting text
     };
     reader.readAsArrayBuffer(file);
   };
 
-  const generateNotes = async (text: string) => {
+  const generateNotes = async (text: string): Promise<void> => {
+    // Send the extracted text to ChatGPT API to generate notes (adjust prompt as needed)
     const response = await fetch("/api/chatgpt", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
     });
 
-    const data = await response.json();
-    return data.notes;
+    if (response.ok) {
+      const result = await response.json();
+      setNotes(result.notes);
+    } else {
+      setNotes("Error generating notes.");
+    }
   };
 
   return (
@@ -89,14 +87,10 @@ export default function Page2() {
         <div>
           <p>File: {pdfFile.name}</p>
           <embed src={URL.createObjectURL(pdfFile)} width="600" height="400" />
-          <div>
-            <h2>Extracted Text</h2>
-            <pre>{pdfText}</pre>
-          </div>
-          <div>
-            <h2>Generated Notes</h2>
-            <button onClick={() => generateNotes(pdfText)}>Generate Notes</button>
-          </div>
+          <h2>Extracted Content</h2>
+          <p>{pdfText.slice(0, 500)}...</p> {/* Show first 500 characters of the extracted text */}
+          <h2>Generated Notes</h2>
+          <p>{notes || "Waiting for notes..."}</p>
         </div>
       ) : (
         <p>No file uploaded.</p>
