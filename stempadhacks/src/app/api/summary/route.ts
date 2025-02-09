@@ -14,7 +14,7 @@ async function getSummary(text: string, gradeLevel: string): Promise<string> {
       {
         model: 'gpt-3.5-turbo',  // Or you can use gpt-4 if available
         messages: [
-          { role: 'system', content: 'You are an expert assistant. Your task is to summarize documents you are given. Your primary goal is to allow children to understand documents, using language they will understand. When summarizing a document with multiple sections, you will give a summary of each section within the document. Format your response in Markdown.'},
+          { role: 'system', content: 'You are an expert assistant. Your task is to summarize documents you are given and use Markdown to make it professional. Your primary goal is to allow children to understand documents, using grade level language they will understand. When summarizing a document with multiple sections, you will give a summary of each section within the document, which you will make into section is markdown. Format your response in Markdown and make it fancy.'},
           { role: 'user', content: prompt },
         ],
         max_tokens: 750,
