@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 export default function Page2() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [gradeLevel, setGradeLevel] = useState('');
-  const [pdfData, setPdfData] = useState<string>('');  // Store parsed text
-  const [jsonData, setJsonData] = useState<any>(null);  // Store raw JSON data
-  const [loading, setLoading] = useState(false);  // Track loading state
+  const [pdfData, setPdfData] = useState<string>(''); 
+  const [jsonData, setJsonData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState<string>('');
 
   useEffect(() => {
     // Check localStorage for existing file and grade level
@@ -44,11 +45,11 @@ export default function Page2() {
 
   const handleFileUpload = async () => {
     if (pdfFile) {
-      setLoading(true);  // Set loading state to true
+      setLoading(true);
       const fileReader = new FileReader();
       fileReader.onload = async function () {
         const fileAsBase64 = fileReader.result as string;
-  
+
         // Send the base64 string to the new API route for parsing
         const response = await fetch("/api/parsePdf", {
           method: "POST",
@@ -57,45 +58,26 @@ export default function Page2() {
           },
           body: JSON.stringify({ pdfFile: fileAsBase64.split(",")[1] }),  // Send the base64 part only
         });
-  
+
         if (response.ok) {
           const data = await response.json();
-          setJsonData(data); // Save raw JSON data from the API
-          const parsedData = extractText(data); // Parse the text from the JSON data
-          setPdfData(parsedData);  // Set the parsed data for display
+          setJsonData(data); 
+          const parsedData = extractText(data);
+          setPdfData(parsedData); 
+
+          await generateSummary(parsedData); 
         } else {
           console.error("Error parsing PDF");
         }
-        setLoading(false);  // Set loading state to false after the fetch is complete
+        setLoading(false); 
       };
       fileReader.readAsDataURL(pdfFile);
     }
   };
 
-  // Define the structure of the Text and Page
-  type TextObject = {
-    A?: string;
-    R: Array<{ T: string; S: number; TS: number[] }>;
-    clr?: number;
-    sw?: number;
-    w?: number;
-    x?: number;
-    y?: number;
-  };
-  
-  type Page = {
-    Boxsets: any[];
-    Fields: any[];
-    Fills: any[];
-    HLines: any[];
-    Height: number;
-    Texts: TextObject[];
-  };
-
   const extractText = (jsonData: { content?: { Pages?: Array<{ Texts: Array<{ R: Array<{ T: string }> }> }> } }) => {
     const textArray: string[] = [];
   
-    // Check if content and Pages exist and are in the correct format
     if (jsonData?.content?.Pages && Array.isArray(jsonData.content.Pages)) {
       jsonData.content.Pages.forEach((page, pageIndex) => {
         if (page?.Texts && Array.isArray(page.Texts)) {
@@ -103,7 +85,7 @@ export default function Page2() {
             if (textObj?.R && Array.isArray(textObj.R)) {
               textObj.R.forEach((rObj, rIndex) => {
                 if (rObj?.T) {
-                  textArray.push(decodeURIComponent(rObj.T)); // Decode the URL-encoded string
+                  textArray.push(decodeURIComponent(rObj.T));
                 }
               });
             }
@@ -114,14 +96,41 @@ export default function Page2() {
       console.error('No Pages or incorrect structure in jsonData:', jsonData);
     }
   
-    return textArray.join(' ');  // Join all text parts into one string
-  };  
+    return textArray.join(' '); 
+  };
+
+  // This is the function that calls the backend to generate the summary
+  const generateSummary = async (text: string) => {
+    if (!text || !gradeLevel) {
+      console.error('Missing text or gradeLevel');
+      return;
+    }
+
+    setLoading(true);
+    console.log("Sending to API:", { text, gradeLevel });
+
+    const response = await fetch("/api/summary", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text, gradeLevel }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setSummary(data.summary);
+    } else {
+      console.error("Error generating summary");
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (pdfFile) {
-      handleFileUpload();  // Trigger the API call when a file is uploaded
+      handleFileUpload();
     }
-  }, [pdfFile]);  // Trigger whenever pdfFile changes
+  }, [pdfFile]);
 
   return (
     <div>
@@ -141,19 +150,19 @@ export default function Page2() {
         <p>No file uploaded.</p>
       )}
 
-      {loading && <p>Loading...</p>}  {/* Show loading state */}
+      {loading && <p>Loading...</p>}
       
       {pdfData && (
         <div>
           <h2>Parsed PDF Data</h2>
-          <pre>{pdfData}</pre>  {/* Display parsed text content */}
+          <pre>{pdfData}</pre>
         </div>
       )}
 
-      {jsonData && (
+      {summary && (
         <div>
-          <h2>Raw PDF Data</h2>
-          <pre>{JSON.stringify(jsonData, null, 2)}</pre>  {/* Display raw JSON data */}
+          <h2>Summary</h2>
+          <pre>{summary}</pre>
         </div>
       )}
     </div>
