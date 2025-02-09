@@ -5,7 +5,7 @@ async function getSummary(text: string, gradeLevel: string): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
 
   // The prompt
-  const prompt = `Create a full page of notes for the following text in language appropriate for a ${gradeLevel} grade student:\n\n${text}. Make sure to include a vocabulary section at the end for words above the grade level and to use common words when possible.`;
+  const prompt = `Create a full page of notes with sections and bullet points for the following text in language appropriate for a ${gradeLevel} grade student:\n\n${text}.`;
 
   try {
     // Requesting OpenAI's GPT-3.5 Turbo using the chat completion endpoint
@@ -14,7 +14,7 @@ async function getSummary(text: string, gradeLevel: string): Promise<string> {
       {
         model: 'gpt-3.5-turbo',  // Or you can use gpt-4 if available
         messages: [
-          { role: 'system', content: 'You are a helpful assistant.' },
+          { role: 'system', content: 'You are an expert assistant. Your task is to summarize documents you are given. Your primary goal is to allow children to understand documents, using language they will understand. When summarizing a document with multiple sections, you will give a summary of each section within the document. Format your response in Markdown.'},
           { role: 'user', content: prompt },
         ],
         max_tokens: 750,

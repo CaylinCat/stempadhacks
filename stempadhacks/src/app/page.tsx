@@ -59,9 +59,9 @@ export default function Home() {
           <h3 className="text-lg font-semibold mb-4">Select Grade Level</h3>
           <div className="flex gap-4">
             <div
-              onClick={() => handleOptionSelect("baby")}
+              onClick={() => handleOptionSelect("preschool and below")}
               className={`cursor-pointer rounded-lg px-5 py-2 text-center text-sm transition-colors font-[family-name:var(--font-geist-mono)] ${
-                selectedOption === "baby"
+                selectedOption === "preschool and below"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-200 hover:bg-gray-300"
               }`}
