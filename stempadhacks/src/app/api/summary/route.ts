@@ -5,7 +5,7 @@ async function getSummary(text: string, gradeLevel: string): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
 
   // The prompt
-  const sysprompt = 'You are an expert assistant. Your task is to generate a long summary of documents you are given. Your primary goal is to allow children to understand documents, using language they will understand. When summarizing a document with multiple sections, you will give a summary of each section within the document.';
+  const sysprompt = 'You are an expert assistant. Your task is to summarize documents you are given. Your primary goal is to allow children to understand documents, using language they will understand. When summarizing a document with multiple sections, you will give a summary of each section within the document. Format your response in Markdown (bolding section titles), and include a vocabulary section at the end.';
   const prompt = `Summarize the following text in language appropriate for a ${gradeLevel} grade student:\n\n${text}`;
 
 
