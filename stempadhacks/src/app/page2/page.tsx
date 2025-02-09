@@ -4,12 +4,21 @@ import { useEffect, useState } from "react";
 
 export default function Page2() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [gradeLevel, setGradeLevel] = useState('');
 
   useEffect(() => {
     const storedFile = localStorage.getItem("pdfFile");
     if (storedFile) {
       const file = dataURLtoFile(storedFile, "uploaded-file.pdf");
       setPdfFile(file);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Retrieve bob from localStorage
+    const savedGradeLevel = localStorage.getItem('gradeLevel');
+    if (savedGradeLevel) {
+      setGradeLevel(savedGradeLevel);
     }
   }, []);
 
@@ -40,6 +49,13 @@ export default function Page2() {
   return (
     <div>
       <h1>Page 2: PDF Upload</h1>
+      {gradeLevel ? (
+        <div>
+          <p>Grade Level: {gradeLevel}</p>
+        </div>
+      ) : (
+        <p>No file uploaded.</p>
+      )}
       {pdfFile ? (
         <div>
           <p>File: {pdfFile.name}</p>
